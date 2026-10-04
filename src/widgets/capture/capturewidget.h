@@ -122,6 +122,9 @@ private:
     QPointer<CaptureTool> activeToolObject();
     void initContext(bool fullscreen, const CaptureRequest& req);
     void initPanel();
+#if defined(USE_LAYER_SHELL)
+    void initLayerShell(QScreen* screen);
+#endif
     void initSelection();
     void initShortcuts();
     void initButtons();
