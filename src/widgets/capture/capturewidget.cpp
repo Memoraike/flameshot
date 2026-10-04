@@ -39,6 +39,10 @@
 #include <QShortcut>
 #include <QWindow>
 
+#if defined(USE_LAYER_SHELL)
+#include <LayerShellQt/Window>
+#endif
+
 #if !defined(DISABLE_UPDATE_CHECKER)
 #include "widgets/updatenotificationwidget.h"
 #endif
@@ -200,6 +204,13 @@ CaptureWidget::CaptureWidget(const CaptureRequest& req,
         if (selectedScreen != nullptr && windowHandle()) {
             windowHandle()->setScreen(selectedScreen);
         }
+
+#if defined(USE_LAYER_SHELL) && !defined(FLAMESHOT_DEBUG_CAPTURE)
+        if (ConfigHandler().useLayerShell() &&
+            QGuiApplication::platformName() == QLatin1String("wayland")) {
+            initLayerShell(selectedScreen);
+        }
+#endif
 #endif
     }
 
@@ -1207,6 +1218,36 @@ void CaptureWidget::initContext(bool fullscreen, const CaptureRequest& req)
     // initialize m_context.request
     m_context.request = req;
 }
+
+#if defined(USE_LAYER_SHELL)
+void CaptureWidget::initLayerShell(QScreen* screen)
+{
+    // The layer surface must be configured before the window is mapped.
+    // If the compositor lacks wlr-layer-shell, LayerShellQt logs a warning
+    // and the window falls back to a regular xdg-shell toplevel.
+    winId();
+    QWindow* window = windowHandle();
+    if (window == nullptr) {
+        return;
+    }
+    if (screen != nullptr) {
+        window->setScreen(screen);
+    }
+
+    auto* layerWindow = LayerShellQt::Window::get(window);
+    if (layerWindow == nullptr) {
+        return;
+    }
+    layerWindow->setScope(QStringLiteral("flameshot"));
+    layerWindow->setLayer(LayerShellQt::Window::LayerOverlay);
+    layerWindow->setAnchors(LayerShellQt::Window::Anchors(
+      LayerShellQt::Window::AnchorTop | LayerShellQt::Window::AnchorBottom |
+      LayerShellQt::Window::AnchorLeft | LayerShellQt::Window::AnchorRight));
+    layerWindow->setExclusiveZone(-1);
+    layerWindow->setKeyboardInteractivity(
+      LayerShellQt::Window::KeyboardInteractivityExclusive);
+}
+#endif
 
 void CaptureWidget::initPanel()
 {

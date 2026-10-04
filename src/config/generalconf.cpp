@@ -62,6 +62,7 @@ GeneralConf::GeneralConf(QWidget* parent)
 #endif
 #if defined(Q_OS_UNIX) && !defined(Q_OS_MACOS)
     initUseX11LegacyScreenshot();
+    initUseLayerShell();
 #endif
 #ifdef ENABLE_IMGUR
     initCopyAndCloseAfterUpload();
@@ -137,6 +138,7 @@ void GeneralConf::_updateComponents(bool allowEmptySavePath)
 #endif
 #if defined(Q_OS_UNIX) && !defined(Q_OS_MACOS)
     m_useX11LegacyScreenshot->setChecked(config.useX11LegacyScreenshot());
+    m_useLayerShell->setChecked(config.useLayerShell());
 #endif
 }
 
@@ -1004,5 +1006,33 @@ void GeneralConf::initUseX11LegacyScreenshot()
 void GeneralConf::useX11LegacyScreenshotChanged(bool checked)
 {
     ConfigHandler().setUseX11LegacyScreenshot(checked);
+}
+
+void GeneralConf::initUseLayerShell()
+{
+    m_useLayerShell =
+      new QCheckBox(tr("Use Wayland layer-shell for the capture window"), this);
+#if defined(USE_LAYER_SHELL)
+    m_useLayerShell->setToolTip(
+      tr("Show the capture window as a layer-shell overlay so it covers "
+         "panels and docks and is not managed like a normal window. "
+         "Requires a compositor with wlr-layer-shell support (e.g. KDE "
+         "Plasma, Sway, Hyprland; not GNOME). Only effective on Wayland."));
+#else
+    m_useLayerShell->setEnabled(false);
+    m_useLayerShell->setToolTip(
+      tr("This build of Flameshot was compiled without layer-shell support."));
+#endif
+    m_scrollAreaLayout->addWidget(m_useLayerShell);
+
+    connect(m_useLayerShell,
+            &QCheckBox::clicked,
+            this,
+            &GeneralConf::useLayerShellChanged);
+}
+
+void GeneralConf::useLayerShellChanged(bool checked)
+{
+    ConfigHandler().setUseLayerShell(checked);
 }
 #endif

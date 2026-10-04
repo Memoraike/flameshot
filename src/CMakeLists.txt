@@ -23,6 +23,10 @@ if (USE_WAYLAND_CLIPBOARD)
     find_package(KF6GuiAddons)
 endif()
 
+if (USE_LAYER_SHELL)
+    find_package(LayerShellQt REQUIRED)
+endif()
+
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
@@ -213,6 +217,11 @@ endif()
 if (USE_WAYLAND_CLIPBOARD)
   target_compile_definitions(flameshot PRIVATE USE_WAYLAND_CLIPBOARD=1)
   target_link_libraries(flameshot KF6::GuiAddons)
+endif()
+
+if (USE_LAYER_SHELL)
+  target_compile_definitions(flameshot PRIVATE USE_LAYER_SHELL=1)
+  target_link_libraries(flameshot LayerShellQt::Interface)
 endif()
 
 if (APPLE)
